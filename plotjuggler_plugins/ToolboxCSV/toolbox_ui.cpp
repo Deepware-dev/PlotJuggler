@@ -92,6 +92,30 @@ ToolBoxUI::ToolBoxUI()
             ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(time_val));
           });
 
+  // Filter applicator in QtableWidget
+  connect(ui->lineEditFilter, &QLineEdit::textChanged, this, [this](const QString& text) {
+    const QString filter = text.trimmed();
+
+    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+    {
+      auto* item = ui->tableWidget->item(row, 0);
+      if (!item)
+      {
+        ui->tableWidget->setRowHidden(row, !filter.isEmpty());
+        continue;
+      }
+
+      if (filter.isEmpty())
+      {
+        ui->tableWidget->setRowHidden(row, false);
+        continue;
+      }
+
+      const bool match = item->text().contains(filter, Qt::CaseInsensitive);
+      ui->tableWidget->setRowHidden(row, !match);
+    }
+  });
+
   connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
     ui->lineEditPrefix->setHidden(!multi_file);
     ui->labelPrefix->setHidden(!multi_file);
@@ -99,6 +123,7 @@ ToolBoxUI::ToolBoxUI()
 
   connect(ui->removeButton, &QToolButton::clicked, this, &ToolBoxUI::removeRequested);
   connect(ui->clearButton, &QToolButton::clicked, this, &ToolBoxUI::clearRequested);
+  connect(ui->buttonAddAllFiles, &QToolButton::clicked, this, &ToolBoxUI::addAllRequested);
   connect(ui->comboTime, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
           this, [this](int) { recomputeTime(); });
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolBoxUI::closed);
@@ -148,6 +173,12 @@ ToolBoxUI::ToolBoxUI()
       emit exportMultipleFiles(is_csv, QDir(dir_path), prefix);
     }
   });
+}
+
+ToolBoxUI::~ToolBoxUI()
+{
+  delete ui;
+  delete _widget;
 }
 
 QWidget* ToolBoxUI::widget() const
@@ -415,4 +446,41 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
     ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(tmin));
     ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(tmax));
   }
+}
+
+void ToolBoxUI::setTopics(const std::vector<std::string>& topics)
+{
+  QSet<QString> existing;
+  existing.reserve(ui->tableWidget->rowCount());
+
+  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+  {
+    auto* item = ui->tableWidget->item(row, 0);
+    if (item)
+    {
+      const QString t = item->text().trimmed();
+      if (!t.isEmpty())
+      {
+        existing.insert(t);
+      }
+    }
+  }
+
+  for (const auto& s : topics)
+  {
+    const QString topic = QString::fromStdString(s).trimmed();
+    if (topic.isEmpty() || existing.contains(topic))
+    {
+      continue;
+    }
+
+    existing.insert(topic);
+
+    const int row = ui->tableWidget->rowCount();
+    ui->tableWidget->insertRow(row);
+    ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
+  }
+
+  updateTimeControlsEnabled();
+  emit recomputeTime();
 }
