@@ -290,7 +290,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
 
 add_subdirectory(plotjuggler_app)
 add_subdirectory(plotjuggler_plugins)
-add_subdirectory( plotjuggler_plugins/plotjuggler-CAN-dbs )
+add_subdirectory( plotjuggler_plugins/CANDbs )
 
 # # Install targets
 
