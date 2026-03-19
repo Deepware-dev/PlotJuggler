@@ -173,11 +173,10 @@ find_or_download_lz4()
 include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_zstd.cmake)
 find_or_download_zstd()
 
-if(NOT COMPILING_WITH_AMENT)
-  include(cmake/download_wasmtime.cmake)
-  download_wasmtime()
-endif()
 
+if(WIN32)
+  set(BACKWARD_ENABLE "")
+endif()
 
 add_subdirectory(3rdparty/qwt/src)
 add_subdirectory(3rdparty/QCodeEditor)
@@ -291,6 +290,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
 
 add_subdirectory(plotjuggler_app)
 add_subdirectory(plotjuggler_plugins)
+add_subdirectory( plotjuggler_plugins/plotjuggler-CAN-dbs )
 
 # # Install targets
 
