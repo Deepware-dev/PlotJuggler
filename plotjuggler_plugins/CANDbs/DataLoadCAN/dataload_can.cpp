@@ -132,7 +132,14 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef& 
       frameId |= 0x0000000080000000;
     }
 	
-    double frameTime = std::stod(canFrame.captured(1).toStdString());
+    double frameTimeUtc = std::stod(canFrame.captured(1).toStdString());
+
+	qint64 wholeSecs = static_cast<qint64>(frameTimeUtc);
+	QDateTime utcDt = QDateTime::fromSecsSinceEpoch(wholeSecs, Qt::UTC);
+	int offsetSec = utcDt.toLocalTime().offsetFromUtc();
+
+	double frameTimeLocal = frameTimeUtc - static_cast<double>(offsetSec);
+	
 
     int dlc = canFrame.capturedLength(4) / 2;
     std::string frameDataString;
@@ -149,7 +156,7 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef& 
     uint8_t frameDataBytes[8];
     std::memcpy(frameDataBytes, &frameData, 8);
     std::reverse(frameDataBytes, frameDataBytes + 8);
-    frame_processor_->ProcessCanFrame(frameId, frameDataBytes, 8, frameTime);
+    frame_processor_->ProcessCanFrame(frameId, frameDataBytes, 8, frameTimeLocal);
     //------ progress dialog --------------
     if (linecount++ % 100 == 0) {
       progress_dialog.setValue(linecount);
